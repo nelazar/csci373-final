@@ -1,6 +1,5 @@
 """
 neuralnet.py
-Author: Noah Elazar
 Trains a neural network and evaluates it, or performs a grid search for hyperparameters.
 """
 

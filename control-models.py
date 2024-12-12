@@ -45,5 +45,7 @@ def gridsearch():
         print(f"Grid search for {dataset_info['name']}")
         neuralnet.gridsearch_mode(dataset_info['path'], dataset_info['name'], 0.75, 12345, True)
 
+# 
+
 if __name__ == "__main__":
     gridsearch()

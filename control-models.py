@@ -20,6 +20,7 @@ with open(Path("./data/datasets.csv"), 'r') as dataset_locations_file:
 # Grid search for each dataset
 def gridsearch():
     for dataset_info in dataset_locations:
+        print(f"Grid search for {dataset_info['name']}")
         neuralnet.gridsearch_mode(dataset_info['path'], dataset_info['name'], 0.75, 12345, True)
 
 if __name__ == "__main__":

@@ -32,11 +32,27 @@ def relabel(dataset_path, label_col):
     with open(dataset_path, 'w') as dataset:
         dataset.writelines(lines)
 
+# Removes the columns in the given list
+def drop_cols(dataset_path, cols):
+    with open(dataset_path, 'r') as dataset:
+        lines = dataset.readlines()
+
+    col_indices = [lines[0].split(',').index(col) for col in cols]
+    for i, line in enumerate(lines):
+        line = line.split(',')
+        for col_index in col_indices:
+            line.pop(col_index)
+        lines[i] = ','.join(line)
+
+    with open(dataset_path, 'w') as dataset:
+        dataset.writelines(lines)
+
 # Preprocess datasets
 def preprocess():
     dataset_locations = get_datasets()
     for dataset_info in dataset_locations:
         relabel(dataset_info['path'], dataset_info['label-col'])
+        drop_cols(dataset_info['path'], dataset_info['drop'].split(';'))
 
 # Grid search for each dataset
 def gridsearch():
@@ -48,4 +64,4 @@ def gridsearch():
 # 
 
 if __name__ == "__main__":
-    gridsearch()
+    preprocess()

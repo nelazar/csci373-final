@@ -38,17 +38,17 @@ def relabel(dataset_path, label_col):
 # Removes the columns in the given list
 def drop_cols(dataset_path, cols):
     with open(dataset_path, 'r') as dataset:
-        lines = dataset.readlines()
-
-    col_indices = [lines[0].split(',').index(col) for col in cols]
-    for i, line in enumerate(lines):
-        line = line.split(',')
-        for col_index in col_indices:
-            line.pop(col_index)
-        lines[i] = ','.join(line)
+        reader = csv.DictReader(dataset)
+        lines = [line for line in reader]
+        
+    for line in lines:
+        for col in cols:
+            line.pop(col, None)
 
     with open(dataset_path, 'w') as dataset:
-        dataset.writelines(lines)
+        writer = csv.DictWriter(dataset, fieldnames = lines[0].keys())
+        writer.writeheader()
+        writer.writerows(lines)
 
 # Preprocess datasets
 def preprocess():
@@ -64,30 +64,45 @@ def gridsearch():
         print(f"Grid search for {dataset_info['name']}")
         nn.gridsearch_mode(dataset_info['path'], dataset_info['name'], 0.75, 12345, True)
 
-# Creates, trains, and saves a model and its data
-def create_model(n_hidden, learning_rate):
+# Creates, trains, and saves the control model and its data
+def control_model(n_hidden, learning_rate):
 
     dataset_locations = get_datasets()
     dataset_info = dataset_locations[0]
 
     dataset = pd.read_csv(dataset_info['path'])
-    training_X, training_y, testing_X, testing_y = nn.preprocess(dataset, 0.75, 12345, True)
-    with open("data/training_X.pickle", 'wb') as f:
-        pickle.dump(training_X, f, pickle.HIGHEST_PROTOCOL)
-    with open("data/training_y.pickle", 'wb') as f:
-        pickle.dump(training_y, f, pickle.HIGHEST_PROTOCOL)
-    with open("data/testing_X.pickle", 'wb') as f:
-        pickle.dump(testing_X, f, pickle.HIGHEST_PROTOCOL)
-    with open("data/testing_y.pickle", 'wb') as f:
-        pickle.dump(testing_y, f, pickle.HIGHEST_PROTOCOL)
+    training, testing = nn.split_data_fairness(dataset, 0.75, 12345)
+    training.to_csv('data/training.csv', index=False)
+    testing.to_csv('data/testing.csv', index=False)
 
-    # n_input = training_X.shape[1]
-    # n_output = len(training_y.unique())
-    # network = nn.create_network(n_input, n_hidden, n_output, True)
-    # nn.train_network(network, training_X, training_y, learning_rate, True)
-    # with open("data/control-model.pickle", 'wb') as f:
-    #     pickle.dump(network, f, pickle.HIGHEST_PROTOCOL)
+    training, testing = nn.preprocess_fairness(training, testing)
+    training_X, training_y, testing_X, testing_y = nn.split_labels(training, testing)
 
+    n_input = training_X.shape[1]
+    n_output = len(training_y.unique())
+    network = nn.create_network(n_input, n_hidden, n_output, True)
+    nn.train_network(network, training_X, training_y, learning_rate, True)
+    with open("data/control-model.pickle", 'wb') as f:
+        pickle.dump(network, f, pickle.HIGHEST_PROTOCOL)
+
+# Creates, trains, and saves the fair model
+def fair_model(n_hidden, learning_rate):
+
+    training = pd.read_csv('data/transformed.csv')
+    testing = pd.read_csv('data/testing.csv')
+
+    training, testing = nn.preprocess_fairness(training, testing)
+    training_X, training_y, testing_X, testing_y = nn.split_labels(training, testing)
+
+    n_input = training_X.shape[1]
+    n_output = len(training_y.unique())
+    network = nn.create_network(n_input, n_hidden, n_output, True)
+    nn.train_network(network, training_X, training_y, learning_rate, True)
+    with open("data/fair-model.pickle", 'wb') as f:
+        pickle.dump(network, f, pickle.HIGHEST_PROTOCOL)
 
 if __name__ == "__main__":
-    create_model(256, 0.01)
+    # preprocess()
+    # gridsearch()
+    control_model(256, 0.001)
+    # fair_model(256, 0.001)

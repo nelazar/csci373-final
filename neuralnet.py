@@ -78,6 +78,47 @@ def preprocess(dataset, train_percentage, seed, classification=True, maxmin=True
 
     return split_data(final, train_percentage, seed)
 
+# Split data for fairness transformation
+def split_data_fairness(data_set, train_percentage, seed):
+    shuffled = data_set.sample(frac=1, random_state=seed)
+    total_rows = shuffled.shape[0]
+    training_rows = int(train_percentage * total_rows)
+    training = shuffled.iloc[:training_rows, :]
+    testing = shuffled.iloc[training_rows:, :]
+
+    return training, testing
+
+# Preprocess data after fairness transformation
+def preprocess_fairness(training, testing, classification=True, maxmin=True):
+
+    if classification:
+        convert_labels(training)
+        convert_labels(testing)
+
+    if maxmin:
+        scaled_train = scale_dataset(training)
+        scaled_test = scale_dataset(testing)
+        final_train = one_hot(scaled_train)
+        final_test = one_hot(scaled_test)
+    else:
+        final_train = one_hot(training)
+        final_test = one_hot(testing)
+
+    # CODE ONLY WORKS FOR SPECIFIC DATASET
+    final_train.drop(["Gender_Woman", "Gender_NonBinary"], axis=1)
+    final_test.drop(["Gender_Woman", "Gender_NonBinary"], axis=1)
+
+    return final_train, final_test
+
+# Split labels from dataset
+def split_labels(training, testing):
+    training_X = training.drop("label", axis=1)
+    training_y = training["label"]
+    testing_X = testing.drop("label", axis=1)
+    testing_y = testing["label"]
+
+    return training_X, training_y, testing_X, testing_y
+
 # Creates a neural network with one hidden layer with a given number of attributes and labels
 def create_network(n_input, n_hidden, n_output, classification=True):
     hidden_layer = [

@@ -244,12 +244,12 @@ def gridsearch_mode(dataset_path, dataset_name, train_percentage, seed, VERBOSE=
 
     # Preprocess dataset
     dataset = pd.read_csv(dataset_path)
-    classification = not pandas.api.types.is_numeric_dtype(dataset["label"])
+    classification = True # not pandas.api.types.is_numeric_dtype(dataset["label"])
     training_X, training_y, testing_X, testing_y = preprocess(dataset, train_percentage, seed, classification)
 
     # Perform grid search
-    learning_rates = [0.0001, 0.001, 0.01, 0.1]
-    neurons = [2, 4, 8, 16, 32, 64, 128, 256]
+    learning_rates = [0.001, 0.01, 0.1]
+    neurons = [32, 64, 128, 256]
     for rate in learning_rates:
         if VERBOSE:
             print(rate)

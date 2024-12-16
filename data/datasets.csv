@@ -1,0 +1,2 @@
+name,path,label-col,drop
+job-applicants,./data/job-applicants/stackoverflow_full.csv,Employed,HaveWorkedWith
